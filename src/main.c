@@ -52,6 +52,7 @@ osThreadId defaultTaskHandle;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 void StartDefaultTask(void const * argument);
+void StartButtonTask();
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -101,6 +102,9 @@ int main(void)
   /* definition and creation of defaultTask */
   osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+
+  osThreadDef(ButtonTask, StartButtonTask, osPriorityNormal, 0, 128);
+    defaultTaskHandle = osThreadCreate(osThread(ButtonTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -331,6 +335,86 @@ void StartDefaultTask(void const * argument)
 
   }
   /* USER CODE END 5 */ 
+}
+
+void StartButtonTask()
+{
+	uint8_t i = 0;
+	uint8_t wasPressed = 0;
+	//uint16_t percent = 0;
+
+	/*uint16_t adc_read;
+
+	char message_int[] = "iiiiabcdefgh\r\n";
+	char message_float[] = "iiiiabcdefgh\r\n";
+	char message_double[] = "iiiiiiiiabcdefgh\r\n";
+	char c = 'u';
+	uint32_t szam = 123456789;
+	char * ptr = &szam;
+
+	float szam2 = 12345.6789;
+	char * ptr2 = &szam2;
+
+	double szam3 = 123456789.123456789;
+	char * ptr3 = &szam3;
+
+	for(i = 0; i<8; i++)
+	{
+		if(i<4){
+			message_int[i] = *ptr;
+			ptr++;
+
+			message_float[i] = *ptr2;
+			ptr2++;
+		}
+
+		message_double[i] = *ptr3;
+		ptr3++;
+	}*/
+
+	for (;;){
+
+		while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0)  == 1) {
+			wasPressed = 1;
+		}
+
+		if (wasPressed){
+
+
+
+			// led fényerõ emelése
+			/*percent = percent + 2000;
+			if (percent > 8300){percent = 0;}
+
+			//TM_PWM_SetChannelPercent(&TIM4_Data, TM_PWM_Channel_4, percent);
+			TIM_OCStruct.TIM_Pulse = percent;
+			TIM_OC2Init(TIM4, &TIM_OCStruct);*/
+
+			char juhe[] = "juheeee746zfhtjjj\r\n";
+			char * j;
+			j = &juhe;
+
+			/*ptr = &message_int;
+			ptr2 = &message_float;
+			ptr3 = &message_double;
+
+			xQueueSend( xQue_BT, (void*) &ptr, ( TickType_t ) 0 );
+			xQueueSend( xQue_BT, (void*) &ptr2, ( TickType_t ) 0 );
+			xQueueSend( xQue_BT, (void*) &ptr3, ( TickType_t ) 0 );*/
+
+
+
+			//STM_EVAL_LEDToggle(LED5);
+			HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+
+
+			wasPressed = 0;
+		}
+
+		//vTaskDelay(30);
+		osDelay(30);
+	}
+
 }
 
 #ifdef USE_FULL_ASSERT
