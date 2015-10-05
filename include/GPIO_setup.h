@@ -11,7 +11,7 @@
 #include "stm32f4xx_hal.h"
 
 void GPIO_Init();
-
+void UART_Initialize();
 
 
 #endif /* INCLUDE_GPIO_SETUP_H_ */

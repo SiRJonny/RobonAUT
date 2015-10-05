@@ -37,11 +37,14 @@
 /* USER CODE BEGIN Includes */
 
 #include "GPIO_setup.h"
+//#include "stm32f4xx_hal_usart.h"
+#include "stm32f4xx_hal_uart.h"
 
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
 osThreadId defaultTaskHandle;
+UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
@@ -51,6 +54,7 @@ osThreadId defaultTaskHandle;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_USART2_UART_Init(void);
 void StartDefaultTask(void const * argument);
 void StartButtonTask();
 
@@ -83,6 +87,10 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   GPIO_Init();
+  //UART_Initialize();
+  MX_USART2_UART_Init();
+
+
 
   /* USER CODE END 2 */
 
@@ -135,6 +143,22 @@ int main(void)
 
 /** System Clock Configuration
 */
+void MX_USART2_UART_Init(void)
+{
+
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 9600;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  HAL_UART_Init(&huart2);
+
+}
+
+
 void SystemClock_Config(void)
 {
 
@@ -390,9 +414,11 @@ void StartButtonTask()
 			TIM_OCStruct.TIM_Pulse = percent;
 			TIM_OC2Init(TIM4, &TIM_OCStruct);*/
 
-			char juhe[] = "juheeee746zfhtjjj\r\n";
+			char juhe[] = "AAAAAAAAAAAAAAAAAAAAAAAAAAj\r\n";
 			char * j;
 			j = &juhe;
+			uint8_t aa = 'k';
+
 
 			/*ptr = &message_int;
 			ptr2 = &message_float;
@@ -408,6 +434,9 @@ void StartButtonTask()
 			HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
 
 
+			HAL_UART_Transmit(&huart2, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",50,2000);
+
+			//HAL_UART_Receive(USART2, &aa, 1, 2000);
 			wasPressed = 0;
 		}
 
