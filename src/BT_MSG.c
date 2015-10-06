@@ -87,4 +87,4 @@ void double2msg(struct BT_MSG * btmsg, double ertek, char* nev)
 	btmsg->size = i+1;
 }
 
-
+// TODO: értelmesebben, egy függvénnyel vagy valami

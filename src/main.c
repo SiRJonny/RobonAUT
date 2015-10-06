@@ -92,11 +92,7 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   GPIO_Init();
-  //UART_Initialize();
   USART2_UART_Init();
-
-
-
 
 
   /* USER CODE END 2 */
@@ -108,7 +104,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   xSem_USART_rdy_to_send = xSemaphoreCreateBinary();
 
-  xQueue_BT = xQueueCreate(10, sizeof(struct BT_MSG*));
+  xQueue_BT = xQueueCreate(30, sizeof(struct BT_MSG*));		// itt, hogy BT tasknak már kész legyen
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
@@ -121,10 +117,10 @@ int main(void)
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   osThreadDef(ButtonTask, StartButtonTask, osPriorityNormal, 0, 128);
-    defaultTaskHandle = osThreadCreate(osThread(ButtonTask), NULL);
+  defaultTaskHandle = osThreadCreate(osThread(ButtonTask), NULL);
 
-    osThreadDef(SendBluetoothTask, SendBluetoothTask, osPriorityNormal, 0, 128);
-    BT_TaskHandle = osThreadCreate(osThread(SendBluetoothTask), NULL);
+  osThreadDef(SendBluetoothTask, SendBluetoothTask, osPriorityNormal, 0, 128);
+  BT_TaskHandle = osThreadCreate(osThread(SendBluetoothTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -194,6 +190,8 @@ void SystemClock_Config(void)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
+// uart2 és hozzátartozó interruptok inicializálása
+// azért main-ben, mert á kell adni neki a handle-t
 void USART2_UART_Init()
 {
   huart2.Instance = USART2;
@@ -210,13 +208,14 @@ void USART2_UART_Init()
   HAL_NVIC_EnableIRQ(USART2_IRQn);
 }
 
+// hal uart callback, TODO: nézni, hogy melyik uart lett kész?
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 	static BaseType_t xHigherPriorityTaskWoken;
 	xSemaphoreGiveFromISR(xSem_USART_rdy_to_send,&xHigherPriorityTaskWoken );
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
-
+// uart2 megszakítás kezelõ, meghívjuk a HAL irq kezelõjét
 void USART2_IRQHandler(void){
 	HAL_UART_IRQHandler(&huart2);
 }
@@ -225,6 +224,7 @@ void USART2_IRQHandler(void){
 /* USER CODE END 4 */
 
 /* StartDefaultTask function */
+// default tastk, csak egy villogó led
 void StartDefaultTask()
 {
 
@@ -233,7 +233,7 @@ void StartDefaultTask()
   for(;;)
   {
 
-    osDelay(1000);
+    osDelay(500);
     HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
 
   }
@@ -242,38 +242,7 @@ void StartDefaultTask()
 
 void StartButtonTask()
 {
-	uint8_t i = 0;
 	uint8_t wasPressed = 0;
-	//uint16_t percent = 0;
-
-	uint16_t adc_read;
-
-	char message_int[] = "iiiiabcdefgh\r\n";
-	char message_float[] = "iiiiabcdefgh\r\n";
-	char message_double[] = "iiiiiiiiabcdefgh\r\n";
-	char c = 'u';
-	uint32_t szam = 123456789;
-	char * ptr = &szam;
-
-	float szam2 = 12345.6789;
-	char * ptr2 = &szam2;
-
-	double szam3 = 123456789.123456789;
-	char * ptr3 = &szam3;
-
-	for(i = 0; i<8; i++)
-	{
-		if(i<4){
-			message_int[i] = *ptr;
-			ptr++;
-
-			message_float[i] = *ptr2;
-			ptr2++;
-		}
-
-		message_double[i] = *ptr3;
-		ptr3++;
-	}
 
 	for (;;){
 
@@ -283,49 +252,34 @@ void StartButtonTask()
 
 		if (wasPressed){
 
-
-			struct BT_MSG msg1;
-			struct BT_MSG * msg_ptr;
-			msg_ptr = &msg1;
-			int2msg(&msg1,6237468,"int32\n");
-			xQueueSend( xQueue_BT, (void*) &msg_ptr, ( TickType_t ) 0 );
+			struct BT_MSG msg_int;
+			struct BT_MSG * msg_int_ptr = &msg_int;
+			int2msg(msg_int_ptr,6237468,"int32\n");
+			xQueueSend( xQueue_BT, (void*) &msg_int_ptr, ( TickType_t ) 0 );
 
 			struct BT_MSG msg_float;
 			struct BT_MSG * msg_float_ptr = &msg_float;
-			float2msg(&msg_float,2345.54533,"float32\n");
+			float2msg(msg_float_ptr,2345.54533,"float32\n");
 			xQueueSend( xQueue_BT, (void*) &msg_float_ptr, ( TickType_t ) 0 );
 
 			struct BT_MSG msg_double;
 			struct BT_MSG * msg_double_ptr = &msg_double;
-			double2msg(&msg_double,2312345.54533,"double32\n");
+			double2msg(msg_double_ptr,2312345.54533,"double32\n");
 			xQueueSend( xQueue_BT, (void*) &msg_double_ptr, ( TickType_t ) 0 );
 
-			//HAL_UART_Transmit_IT(&huart2,"asdfasdf",8);
-
-			/*ptr = &message_int;
-			xQueueSend( xQueue_BT, (void*) &ptr, ( TickType_t ) 0 );
-
-			ptr2 = &message_float;
-			ptr3 = &message_double;
-
-
-			xQueueSend( xQueue_BT, (void*) &ptr2, ( TickType_t ) 0 );
-			xQueueSend( xQueue_BT, (void*) &ptr3, ( TickType_t ) 0 );*/
 
 			HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14); // piros led, debug
 
 			wasPressed = 0;
 		}
-
-		//vTaskDelay(30);
 		osDelay(30);
 	}
-
 }
 
+// bluetooth küldõ task, xQueue_BT-n keresztül kapja a struct BT_MSG pointereket, abból küldi az adatokat
+// ha minden igaz csak akkor fut, ha tényleg van dolga
 void SendBluetoothTask()
 {
-
 	struct BT_MSG *msg;
 	xSemaphoreGive(xSem_USART_rdy_to_send);
 

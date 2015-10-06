@@ -37,7 +37,6 @@ void GPIO_Init(){
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 
-
 }
 
 
