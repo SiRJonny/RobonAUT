@@ -287,8 +287,18 @@ void StartButtonTask()
 			struct BT_MSG msg1;
 			struct BT_MSG * msg_ptr;
 			msg_ptr = &msg1;
-			int2msg(&msg1,6237468,"0000asdf\n");
+			int2msg(&msg1,6237468,"int32\n");
 			xQueueSend( xQueue_BT, (void*) &msg_ptr, ( TickType_t ) 0 );
+
+			struct BT_MSG msg_float;
+			struct BT_MSG * msg_float_ptr = &msg_float;
+			float2msg(&msg_float,2345.54533,"float32\n");
+			xQueueSend( xQueue_BT, (void*) &msg_float_ptr, ( TickType_t ) 0 );
+
+			struct BT_MSG msg_double;
+			struct BT_MSG * msg_double_ptr = &msg_double;
+			double2msg(&msg_double,2312345.54533,"double32\n");
+			xQueueSend( xQueue_BT, (void*) &msg_double_ptr, ( TickType_t ) 0 );
 
 			//HAL_UART_Transmit_IT(&huart2,"asdfasdf",8);
 

@@ -14,8 +14,8 @@ void int2msg(struct BT_MSG * btmsg, int ertek, char* nev)
 	uint8_t i;
 	uint8_t * ptr;
 
-	btmsg->data[0] = 1;
-	btmsg->data[1] = 4;
+	btmsg->data[0] = 1;	// 1 = int
+	btmsg->data[1] = 4;	// 32 bit
 
 	ptr = &ertek;
 	for( i=2 ; i<(sizeof(int)+2) ; i++)
@@ -32,6 +32,58 @@ void int2msg(struct BT_MSG * btmsg, int ertek, char* nev)
 	}
 	btmsg->data[i] = '\0';
 	btmsg->datasize = sizeof(int);
+	btmsg->size = i+1;
+}
+
+void float2msg(struct BT_MSG * btmsg, float ertek, char* nev)
+{
+	uint8_t i;
+	uint8_t * ptr;
+
+	btmsg->data[0] = 3;		// 3 = float
+	btmsg->data[1] = 4;		// 32 bit
+
+	ptr = &ertek;
+	for( i=2 ; i<(sizeof(float)+2) ; i++)
+	{
+		btmsg->data[i] = *ptr;
+		ptr++;
+	}
+
+	while (*nev)
+	{
+		btmsg->data[i] = *nev;
+		nev++;
+		i++;
+	}
+	btmsg->data[i] = '\0';
+	btmsg->datasize = sizeof(float);
+	btmsg->size = i+1;
+}
+
+void double2msg(struct BT_MSG * btmsg, double ertek, char* nev)
+{
+	uint8_t i;
+	uint8_t * ptr;
+
+	btmsg->data[0] = 4;		// 3 = float
+	btmsg->data[1] = 8;		// 64 bit
+
+	ptr = &ertek;
+	for( i=2 ; i<(sizeof(double)+2) ; i++)
+	{
+		btmsg->data[i] = *ptr;
+		ptr++;
+	}
+
+	while (*nev)
+	{
+		btmsg->data[i] = *nev;
+		nev++;
+		i++;
+	}
+	btmsg->data[i] = '\0';
+	btmsg->datasize = sizeof(double);
 	btmsg->size = i+1;
 }
 
