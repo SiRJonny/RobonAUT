@@ -37,8 +37,9 @@
 /* USER CODE BEGIN Includes */
 #include "queue.h"
 #include "GPIO_setup.h"
-//#include "stm32f4xx_hal_usart.h"
 #include "stm32f4xx_hal_uart.h"
+#include "BT_MSG.h"
+
 
 /* USER CODE END Includes */
 
@@ -96,6 +97,8 @@ int main(void)
 
 
 
+
+
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -105,7 +108,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   xSem_USART_rdy_to_send = xSemaphoreCreateBinary();
 
-  xQueue_BT = xQueueCreate(10, sizeof(char*));
+  xQueue_BT = xQueueCreate(10, sizeof(struct BT_MSG*));
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
@@ -281,23 +284,15 @@ void StartButtonTask()
 		if (wasPressed){
 
 
-
-			// led fényerõ emelése
-			/*percent = percent + 2000;
-			if (percent > 8300){percent = 0;}
-
-			//TM_PWM_SetChannelPercent(&TIM4_Data, TM_PWM_Channel_4, percent);
-			TIM_OCStruct.TIM_Pulse = percent;
-			TIM_OC2Init(TIM4, &TIM_OCStruct);*/
-
-			char juhe[] = "AAAAAAAAAAAAAAAAAAAAAAAAAAj\r\n";
-			char * j;
-			j = &juhe;
-			uint8_t aa = 'k';
+			struct BT_MSG msg1;
+			struct BT_MSG * msg_ptr;
+			msg_ptr = &msg1;
+			int2msg(&msg1,6237468,"0000asdf\n");
+			xQueueSend( xQueue_BT, (void*) &msg_ptr, ( TickType_t ) 0 );
 
 			//HAL_UART_Transmit_IT(&huart2,"asdfasdf",8);
 
-			ptr = &message_int;
+			/*ptr = &message_int;
 			xQueueSend( xQueue_BT, (void*) &ptr, ( TickType_t ) 0 );
 
 			ptr2 = &message_float;
@@ -305,17 +300,10 @@ void StartButtonTask()
 
 
 			xQueueSend( xQueue_BT, (void*) &ptr2, ( TickType_t ) 0 );
-			xQueueSend( xQueue_BT, (void*) &ptr3, ( TickType_t ) 0 );
+			xQueueSend( xQueue_BT, (void*) &ptr3, ( TickType_t ) 0 );*/
 
+			HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14); // piros led, debug
 
-
-			//STM_EVAL_LEDToggle(LED5);
-			HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
-
-
-			//HAL_UART_Transmit(&huart2, (uint8_t*)"ABCDEFGH",8,2000);
-
-			//HAL_UART_Receive(USART2, &aa, 1, 2000);
 			wasPressed = 0;
 		}
 
@@ -328,7 +316,7 @@ void StartButtonTask()
 void SendBluetoothTask()
 {
 
-	char *s;
+	struct BT_MSG *msg;
 	xSemaphoreGive(xSem_USART_rdy_to_send);
 
 	for( ;; )
@@ -337,9 +325,9 @@ void SendBluetoothTask()
 		{
 			if ( xSemaphoreTake(xSem_USART_rdy_to_send,	portMAX_DELAY) == pdTRUE)
 			{
-				if (xQueueReceive(xQueue_BT, &s, portMAX_DELAY))// blokk amíg nincs adat
+				if (xQueueReceive(xQueue_BT, &(msg), portMAX_DELAY))// blokk amíg nincs adat
 				{
-					HAL_UART_Transmit_IT(&huart2, (uint8_t*) s, 10);
+					HAL_UART_Transmit_IT(&huart2, (uint8_t*) msg->data, msg->size);
 				}
 			}
 		}
