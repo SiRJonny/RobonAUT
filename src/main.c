@@ -371,7 +371,7 @@ void SendRemoteVarTask()
 
 
 		// minden változóhoz konverzió és küldés
-		int2msg(msg_int_ptr, szuper_szamlalo, "teszt_int32\n");
+		int2msg(msg_int_ptr, szuper_szamlalo, "szamlalo_int32\n");
 		xQueueSend( xQueue_BT, (void*) &msg_int_ptr, ( TickType_t ) 0 );
 
 
