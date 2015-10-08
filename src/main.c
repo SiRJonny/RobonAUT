@@ -320,26 +320,10 @@ void StartButtonTask()
 
 		if (wasPressed){
 
-<<<<<<< HEAD
-			struct BT_MSG msg_int;
-			struct BT_MSG * msg_int_ptr = &msg_int;
-			int2msg(msg_int_ptr,6237468,"int32");
-			xQueueSend( xQueue_BT, (void*) &msg_int_ptr, ( TickType_t ) 0 );
 
-			struct BT_MSG msg_float;
-			struct BT_MSG * msg_float_ptr = &msg_float;
-			float2msg(msg_float_ptr,2345.54533,"float32");
-			xQueueSend( xQueue_BT, (void*) &msg_float_ptr, ( TickType_t ) 0 );
-
-			struct BT_MSG msg_double;
-			struct BT_MSG * msg_double_ptr = &msg_double;
-			double2msg(msg_double_ptr,2312345.54533,"double32");
-			xQueueSend( xQueue_BT, (void*) &msg_double_ptr, ( TickType_t ) 0 );
-
-=======
 			// remote változók elküldése
 			osThreadResume(SendRemoteVar_TaskHandle);
->>>>>>> origin/master
+
 
 			HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14); // piros led, debug
 
