@@ -9,11 +9,13 @@
 #define INCLUDE_READSENSORS_H_
 
 
+#include "stm32f4xx_hal.h"
+
 void ReadSensors();
 void EnableDrivers();
 void DisableDrivers();
 void SetLeds(uint16_t pattern);
-void ShiftLeds(uint8_t);
+void ShiftLeds(uint8_t amount);
 
 void EnableMUX();
 void DisableMUX();
