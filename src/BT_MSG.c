@@ -8,9 +8,11 @@
 
 #include "BT_MSG.h"
 
+int szuper_szamlalo = 2342345;
 
 void int2msg(struct BT_MSG * btmsg, int ertek, char* nev)
 {
+szuper_szamlalo++;	// enélkül kiegyszerûsíti és hard fault.....
 	uint8_t i;
 	uint8_t * ptr;
 

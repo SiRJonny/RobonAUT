@@ -46,7 +46,10 @@
 /* Private variables ---------------------------------------------------------*/
 osThreadId defaultTaskHandle;
 osThreadId BT_TaskHandle;
-UART_HandleTypeDef huart2;
+osThreadId SendRemoteVar_TaskHandle;
+UART_HandleTypeDef huart3;
+ADC_HandleTypeDef hadc1;
+SPI_HandleTypeDef hspi3;
 QueueHandle_t xQueue_BT;
 SemaphoreHandle_t xSem_USART_rdy_to_send = 0;
 
@@ -60,7 +63,10 @@ void SystemClock_Config(void);
 void StartDefaultTask();
 void StartButtonTask();
 void SendBluetoothTask();
-void USART2_UART_Init();
+void SendRemoteVarTask();
+void USART3_UART_Init();
+static void MX_ADC1_Init(void);
+static void MX_SPI3_Init(void);
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
 
 /* USER CODE BEGIN PFP */
@@ -92,8 +98,9 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   GPIO_Init();
-  USART2_UART_Init();
-
+  USART3_UART_Init();
+  MX_ADC1_Init();
+  MX_SPI3_Init();
 
   /* USER CODE END 2 */
 
@@ -102,9 +109,10 @@ int main(void)
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
+
   xSem_USART_rdy_to_send = xSemaphoreCreateBinary();
 
-  xQueue_BT = xQueueCreate(30, sizeof(struct BT_MSG*));		// itt, hogy BT tasknak m·r kÈsz legyen
+  xQueue_BT = xQueueCreate(30, sizeof(struct BT_MSG*));		// itt, hogy BT tasknak m√°r k√©sz legyen
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
@@ -121,6 +129,14 @@ int main(void)
 
   osThreadDef(SendBluetoothTask, SendBluetoothTask, osPriorityNormal, 0, 128);
   BT_TaskHandle = osThreadCreate(osThread(SendBluetoothTask), NULL);
+
+  osThreadDef(SendRemoteVarTask, SendRemoteVarTask, osPriorityNormal, 0, 128);
+  SendRemoteVar_TaskHandle = osThreadCreate(osThread(SendRemoteVarTask), NULL);
+
+
+
+
+
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -190,41 +206,93 @@ void SystemClock_Config(void)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
-// uart2 Ès hozz·tartozÛ interruptok inicializ·l·sa
-// azÈrt main-ben, mert · kell adni neki a handle-t
-void USART2_UART_Init()
-{
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 9600;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  HAL_UART_Init(&huart2);
 
-  HAL_NVIC_SetPriority(USART2_IRQn,14,0);
-  HAL_NVIC_EnableIRQ(USART2_IRQn);
+// ADC init
+void MX_ADC1_Init(void)
+{
+
+  ADC_ChannelConfTypeDef sConfig;
+
+    /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+    */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV4;
+  hadc1.Init.Resolution = ADC_RESOLUTION12b;
+  hadc1.Init.ScanConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.EOCSelection = EOC_SINGLE_CONV;
+  HAL_ADC_Init(&hadc1);
+
+    /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+    */
+  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+
 }
 
-// hal uart callback, TODO: nÈzni, hogy melyik uart lett kÈsz?
+/* SPI3 init function */
+void MX_SPI3_Init(void)
+{
+
+  hspi3.Instance = SPI3;
+  hspi3.Init.Mode = SPI_MODE_MASTER;
+  hspi3.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi3.Init.NSS = SPI_NSS_SOFT;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi3.Init.TIMode = SPI_TIMODE_DISABLED;
+  hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLED;
+  hspi3.Init.CRCPolynomial = 10;
+  HAL_SPI_Init(&hspi3);
+
+}
+
+
+// uart2 √©s hozz√°tartoz√≥ interruptok inicializ√°l√°sa
+// az√©rt main-ben, mert √° kell adni neki a handle-t
+void USART3_UART_Init()
+{
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 9600;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  HAL_UART_Init(&huart3);
+
+  HAL_NVIC_SetPriority(USART3_IRQn,14,0);
+  HAL_NVIC_EnableIRQ(USART3_IRQn);
+}
+
+// hal uart callback, TODO: n√©zni, hogy melyik uart lett k√©sz?
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 	static BaseType_t xHigherPriorityTaskWoken;
 	xSemaphoreGiveFromISR(xSem_USART_rdy_to_send,&xHigherPriorityTaskWoken );
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
-// uart2 megszakÌt·s kezelı, meghÌvjuk a HAL irq kezelıjÈt
-void USART2_IRQHandler(void){
-	HAL_UART_IRQHandler(&huart2);
+// uart2 megszak√≠t√°s kezel≈ë, megh√≠vjuk a HAL irq kezel≈ëj√©t
+void USART3_IRQHandler(void){
+	HAL_UART_IRQHandler(&huart3);
 }
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
 
 /* StartDefaultTask function */
-// default tastk, csak egy villogÛ led
+// default tastk, csak egy villog√≥ led
 void StartDefaultTask()
 {
 
@@ -252,6 +320,7 @@ void StartButtonTask()
 
 		if (wasPressed){
 
+<<<<<<< HEAD
 			struct BT_MSG msg_int;
 			struct BT_MSG * msg_int_ptr = &msg_int;
 			int2msg(msg_int_ptr,6237468,"int32");
@@ -267,6 +336,10 @@ void StartButtonTask()
 			double2msg(msg_double_ptr,2312345.54533,"double32");
 			xQueueSend( xQueue_BT, (void*) &msg_double_ptr, ( TickType_t ) 0 );
 
+=======
+			// remote v√°ltoz√≥k elk√ºld√©se
+			osThreadResume(SendRemoteVar_TaskHandle);
+>>>>>>> origin/master
 
 			HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14); // piros led, debug
 
@@ -276,8 +349,8 @@ void StartButtonTask()
 	}
 }
 
-// bluetooth k¸ldı task, xQueue_BT-n kereszt¸l kapja a struct BT_MSG pointereket, abbÛl k¸ldi az adatokat
-// ha minden igaz csak akkor fut, ha tÈnyleg van dolga
+// bluetooth k√ºld≈ë task, xQueue_BT-n kereszt√ºl kapja a struct BT_MSG pointereket, abb√≥l k√ºldi az adatokat
+// ha minden igaz csak akkor fut, ha t√©nyleg van dolga
 void SendBluetoothTask()
 {
 	struct BT_MSG *msg;
@@ -289,16 +362,38 @@ void SendBluetoothTask()
 		{
 			if ( xSemaphoreTake(xSem_USART_rdy_to_send,	portMAX_DELAY) == pdTRUE)
 			{
-				if (xQueueReceive(xQueue_BT, &(msg), portMAX_DELAY))// blokk amÌg nincs adat
+				if (xQueueReceive(xQueue_BT, &(msg), portMAX_DELAY))// blokk am√≠g nincs adat
 				{
-					HAL_UART_Transmit_IT(&huart2, (uint8_t*) msg->data, msg->size);
+					HAL_UART_Transmit_IT(&huart3, (uint8_t*) msg->data, msg->size);
 				}
 			}
 		}
 	}
 }
 
+void SendRemoteVarTask()
+{
 
+	// minden remote v√°ltoz√≥hez k√ºlen kellenek ezek
+	struct BT_MSG msg_int;
+	struct BT_MSG * msg_int_ptr = &msg_int;
+	extern int szuper_szamlalo; // v√°ltoz√≥ m√°sik fileban
+
+	osThreadSuspend(SendRemoteVar_TaskHandle);
+
+	for(;;)
+	{
+
+		// minden v√°ltoz√≥hoz konverzi√≥ √©s k√ºld√©s
+		int2msg(msg_int_ptr, szuper_szamlalo, "teszt_int32\n");
+		xQueueSend( xQueue_BT, (void*) &msg_int_ptr, ( TickType_t ) 0 );
+
+
+
+		osThreadSuspend(SendRemoteVar_TaskHandle); // minden elk√ºldve, pihen√ºnk (osThreadResume-ra megint elk√ºld mindent)
+	}
+
+}
 
 
 
