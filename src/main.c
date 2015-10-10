@@ -116,11 +116,11 @@ int main(void)
   GPIO_Init();
   USART3_UART_Init();
   MX_ADC1_Init();
-  /*MX_ADC2_Init();
+  MX_ADC2_Init();
   MX_SPI3_Init();
-  MX_TIM1_Init();
-  MX_TIM2_Init();
-  MX_USART1_UART_Init();*/
+  //MX_TIM1_Init();		// TODO: valamiért hard fault
+  //MX_TIM2_Init();
+  MX_USART1_UART_Init();
 
   /* USER CODE END 2 */
 
