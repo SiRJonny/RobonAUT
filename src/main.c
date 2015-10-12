@@ -60,8 +60,13 @@ SPI_HandleTypeDef hspi3;
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 
-QueueHandle_t xQueue_BT;
-SemaphoreHandle_t xSem_USART_rdy_to_send = 0;
+osSemaphoreId xSem_USART_rdy_to_send;
+osSemaphoreDef(xSem_USART_rdy_to_send);
+
+osMessageQId xQueue_BT;
+osMessageQDef(xQueue_BT,30,struct BT_MSG*);
+
+
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
@@ -131,9 +136,13 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
 
-  xSem_USART_rdy_to_send = xSemaphoreCreateBinary();
 
-  xQueue_BT = xQueueCreate(30, sizeof(struct BT_MSG*));		// itt, hogy BT tasknak már kész legyen
+  xSem_USART_rdy_to_send = osSemaphoreCreate(osSemaphore(xSem_USART_rdy_to_send),1);
+
+
+	// itt, hogy BT tasknak már kész legyen
+  xQueue_BT = osMessageCreate(osMessageQ(xQueue_BT), NULL);
+
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
@@ -439,9 +448,10 @@ void USART3_UART_Init()
 
 // hal uart callback, TODO: nézni, hogy melyik uart lett kész?
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
-	static BaseType_t xHigherPriorityTaskWoken;
-	xSemaphoreGiveFromISR(xSem_USART_rdy_to_send,&xHigherPriorityTaskWoken );
-	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+	if(huart->Instance == USART3)
+	{
+		osSemaphoreRelease(xSem_USART_rdy_to_send);
+	}
 }
 
 // uart2 megszakítás kezelő, meghívjuk a HAL irq kezelőjét
@@ -499,19 +509,21 @@ void StartButtonTask()
 void SendBluetoothTask()
 {
 	struct BT_MSG *msg;
-	xSemaphoreGive(xSem_USART_rdy_to_send);
+	osEvent evt;
 
 	for( ;; )
 	{
 		if(xQueue_BT != 0)
 		{
-			if ( xSemaphoreTake(xSem_USART_rdy_to_send,	portMAX_DELAY) == pdTRUE)
+			osSemaphoreWait(xSem_USART_rdy_to_send,osWaitForever);	// blokk amíg el nem küldi
+
+			evt = osMessageGet(xQueue_BT, osWaitForever);
+			if( evt.status == osEventMessage )
 			{
-				if (xQueueReceive(xQueue_BT, &(msg), portMAX_DELAY))// blokk amíg nincs adat
-				{
-					HAL_UART_Transmit_IT(&huart3, (uint8_t*) msg->data, msg->size);
-				}
+				msg = evt.value.p;
+				HAL_UART_Transmit_IT(&huart3, (uint8_t*) msg->data, msg->size);
 			}
+
 		}
 	}
 }
@@ -524,6 +536,7 @@ void SendRemoteVarTask()
 	struct BT_MSG * msg_int_ptr = &msg_int;
 	extern int szuper_szamlalo; // változó másik fileban
 
+
 	osThreadSuspend(SendRemoteVar_TaskHandle);
 
 	for(;;)
@@ -533,8 +546,7 @@ void SendRemoteVarTask()
 
 		// minden változóhoz konverzió és küldés
 		int2msg(msg_int_ptr, szuper_szamlalo, "szamlalo_int32\n");
-		xQueueSend( xQueue_BT, (void*) &msg_int_ptr, ( TickType_t ) 0 );
-
+		osMessagePut(xQueue_BT,(uint32_t) msg_int_ptr, osWaitForever);
 
 
 		osThreadSuspend(SendRemoteVar_TaskHandle); // minden elküldve, pihenünk (osThreadResume-ra megint elküld mindent)

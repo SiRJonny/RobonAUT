@@ -14,11 +14,11 @@ void ReadSensors()
 
 void EnableDrivers()
 {
-
+	HAL_GPIO_WritePin(GPIOD,GPIO_PIN_7,GPIO_PIN_RESET); // BLANK negált jel
 }
 void DisableDrivers()
 {
-
+	HAL_GPIO_WritePin(GPIOD,GPIO_PIN_7,GPIO_PIN_SET);
 }
 void SetLeds(uint16_t pattern)
 {
