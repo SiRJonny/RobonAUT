@@ -36,6 +36,7 @@
 
 /* USER CODE BEGIN Includes */
 #include "queue.h"
+#include "task.h"
 #include "GPIO_setup.h"
 #include "stm32f4xx_hal_uart.h"
 #include "BT_MSG.h"

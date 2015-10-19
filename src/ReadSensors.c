@@ -24,6 +24,8 @@ void SetLeds(uint16_t pattern)
 {
 
 }
+
+// nincs 1bit küldés SPI-on, ez lehet kimarad
 void ShiftLeds(uint8_t amount)
 {
 
@@ -61,6 +63,7 @@ void SetMUX(uint8_t ch)
 	}
 	
 }
+
 
 uint16_t ReadADC()
 {
